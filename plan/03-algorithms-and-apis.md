@@ -56,13 +56,15 @@ stateDiagram-v2
 | **Global** | **`L3 + R3`** (`F12` on PC) | Toggle Live Debug HUD overlay |
 | **In-Game** | D-Pad / Left Stick | Game Boy D-Pad (deadzone `16384`) |
 | **In-Game** | `Cross` (`×`) / `Circle` (`○`) | Game Boy **A** (Circle/Cross swappable in Settings; default: `Circle = A`, `Cross = B`) |
-| **In-Game** | `Options` | Open Pause Modal (Resume, Save State 0–3, Load State 0–3, Palette, JIT/Interp Toggle, Reset, Exit to Browser) |
-| **In-Game** | `Touchpad` / `Share` (`Tab` on PC) | Game Boy **SELECT** (`R1` = **START** alternative; `L2` = Fast-Forward hold 4×) |
-| **In-Game** | `R2` | Quick Save State (Slot 0) / `L1` = Quick Load State (Slot 0) |
+| **In-Game** | `Options` (`Esc` on PC) | Open Pause Modal (Resume, Save State 0–3, Load State 0–3, Palette, JIT/Interp Toggle, Reset, Exit to Browser) |
+| **In-Game** | `Touchpad` click (`Tab` on PC) | Game Boy **SELECT** *(never bind DS4 `Share` — Orbis OS intercepts `Share` for the system menu)* |
+| **In-Game** | `R1` (`Enter` on PC) | Game Boy **START** |
+| **In-Game** | `L2` (hold) | Fast-Forward 4× |
+| **In-Game** | `R2` / `L1` | Quick Save State (Slot 0) / Quick Load State (Slot 0) |
 | **Menus** | D-Pad / Left Stick (debounce `200 ms`) | Navigate list / options |
 | **Menus** | `Cross` (`×`) | Confirm / Select |
 | **Menus** | `Circle` (`○`) | Back / Close modal |
-| **Menus** | `Triangle` (`△`) | Refresh ROM list (`/data/gbjit/roms/` + `/mnt/usb0..7/`) |
+| **Menus** | `Triangle` (`△`) | Refresh ROM list (`/data/gbjit/roms/`) |
 
 ## 3. Wire & Kernel Structs (`_Static_assert` Enforced)
 1. **`OrbisStatWire` (120 bytes)**:
@@ -78,11 +80,10 @@ stateDiagram-v2
 ## 4. Orbis OS Init-Order & ABI Rules
 1. Install Crash Signal Handler (`SIGSEGV`, `SIGBUS`, `SIGILL`, `SIGABRT`, `SIGFPE`, ignore `SIGSYS`).
 2. Initialize `/data/gbjit/` directory & structured logger (`log.txt` + `sceKernelDebugOutText` Klog tee).
-3. Run **Boot-Time Hardware Self-Test** across all subsystems without aborting on first failure.
+3. Run **Boot-Time Hardware Self-Test** across all 6 subsystems without aborting on first failure.
 4. Initialize `sceUserServiceInitialize(NULL)` -> `sceUserServiceGetInitialUser(&user_id)` -> `scePadInit()` -> `scePadOpen()`.
 5. Initialize `sceVideoOutOpen` -> `sceKernelAllocateDirectMemory` (`2 MiB`-aligned) -> `sceKernelMapDirectMemory` (`prot = 0x33`) -> `sceVideoOutRegisterBuffers` (`0x80000000U`).
 6. Initialize **single** `sceAudioOutOpen(0xFF, MAIN, 0, 512, 48000, S16_STEREO)` -> `sceAudioOutSetVolume` (`32768`) -> spawn audio thread with explicit `1 MiB` stack.
 7. Allocate `4 MiB` JIT dual-mapped RW/RX arena (`0x07` + `0x03`, `16 KiB` aligned); on failure, log decoded `rc` and cleanly set `jit_available = false` (automatic interpreter fallback).
-8. Optional GoldHEN Syscall `500`: call `syscall(0, 500, 2, &backup)` -> **immediately `setuid(backup.cr_uid)`** -> probe `/mnt/usb0..7/` via `st_dev != mnt_st.st_dev`.
-9. Call `sceSystemServiceHideSplashScreen()`.
-10. **Clean Exit**: flush SRAM + `log.txt` + `klog.txt` + `missing_report.txt` -> restore GoldHEN syscall `500` (`syscall(0, 500, 3, &backup)`) -> call **`sceSystemServiceLoadExec("exit", NULL)`** (never `_exit()`).
+8. Call `sceSystemServiceHideSplashScreen()`.
+9. **Clean Exit**: flush SRAM + `log.txt` + `klog.txt` + `missing_report.txt` -> call **`sceSystemServiceLoadExec("exit", NULL)`** (never `_exit()`).

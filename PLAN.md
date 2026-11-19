@@ -19,7 +19,7 @@
 - [ ] **Phase 2 — DMG Memory Bus, Cart/MBC0-5 & HLE Subsystems** (DMG Boot ROM HLE, Timer, Joypad, Scanline PPU, OAM DMA, 48 kHz 4-ch APU, Battery SRAM `.sav` & Save States)
 - [ ] **Phase 3 — Reference SM83 Interpreter + Blargg/dmg-acid2 Verification** (100% SM83 ISA passing `cpu_instrs` & `dmg-acid2` in Tier 2 CI)
 - [ ] **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Verification** (Dual-mapped RW/RX emitter, `(bank, pc)` block cache, SMC invalidation, HLE `HALT`/DMA fast-paths, 100% JIT-vs-Interpreter lockstep pass in CI)
-- [ ] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/` & `/mnt/usb0..7/`, pause/settings/palette/JIT-toggle modals, `L3+R3`/`F12` Debug HUD, scripted E2E tests in CI)
+- [ ] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/`, pause/settings/palette/JIT-toggle modals, `L3+R3`/`F12` Debug HUD, scripted E2E tests in CI)
 - [ ] **Phase 6 — Tier 4 Windows Interactive Verification & `shadPS4` Smoke Test**
 - [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** (1–3 batched runs logged in `plan/ps4-runs/`)
 

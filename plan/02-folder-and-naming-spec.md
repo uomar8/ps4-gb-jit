@@ -59,7 +59,7 @@ ps4-gb-jit/
 │   └── hal/
 │       ├── hal.h                     # Pure C HAL interface (video, audio, input, fs, jit, sys)
 │       ├── ps4/                      # Orbis OS implementation (ONLY place libSce* is included)
-│       │   ├── hal_ps4_sys.c         # Init, splash hide, GoldHEN syscall 500, clean exit, klog
+│       │   ├── hal_ps4_sys.c         # Init, splash hide, clean exit, klog
 │       │   ├── hal_ps4_video.c       # sceVideoOut 1080p DirectMemory 2 MiB prot=0x33
 │       │   ├── hal_ps4_audio.c       # sceAudioOut 1-port 48 kHz + 1 MiB thread
 │       │   ├── hal_ps4_input.c       # scePad DS4 polling
@@ -88,7 +88,7 @@ ps4-gb-jit/
 ## 2. Strict HAL Boundary Rules
 - **Zero `libSce*`, `<orbis/*>`, or `<windows.h>` leaks** into `src/core/`, `src/ui/`, or `src/debug/` (except optional platform crash-context helper behind `hal_sys_*`). Enforced automatically by `scripts/lint.sh` in Tier 1 CI.
 - **Language Standard**: Clean **C11** (`-std=c11`) for the entire codebase — zero `libc++` / `__cxa_guard_acquire` / `std::regex` hazards, fast compile times, predictable stack frames, and trivial FFI with OpenOrbis `v0.5.4`, Clang/GCC on Linux, and MSVC/Clang on Windows.
-- **Paths**: HAL provides `hal_fs_get_data_dir()` (`/data/gbjit` on PS4, `./data` on PC), `hal_fs_get_app_dir()` (`/app0` on PS4, `./assets` on PC), and `hal_fs_list_usb_mounts()` (`/mnt/usb0..7` on PS4). Never call `getcwd()` or `realpath(".")`.
+- **Paths**: HAL provides `hal_fs_get_data_dir()` (`/data/gbjit` on PS4, `./data` on PC) and `hal_fs_get_app_dir()` (`/app0` on PS4, `./assets` on PC). Never call `getcwd()` or `realpath(".")`.
 
 ## 3. Naming & Error-Handling Conventions
 - **Functions**: `<subsystem>_<module>_<action>()` in `snake_case` (e.g., `jit_x64_emit_mov_r64_imm32()`, `hle_ppu_render_scanline()`, `hal_ps4_jit_alloc()`, `dbg_log_write()`).

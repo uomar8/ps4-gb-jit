@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TD
     subgraph UI["src/ui/ (1080p Native Software UI)"]
-        Browser["ROM Browser (/data/gbjit/roms + /mnt/usb0..7)"]
+        Browser["ROM Browser (/data/gbjit/roms)"]
         Pause["Pause / Settings / Palette / JIT Toggle Modals"]
         HUD["Live Debug HUD (L3+R3 / F12)"]
     end
@@ -30,7 +30,7 @@ flowchart TD
     end
 
     subgraph HAL["src/hal/ (Thin Platform Boundary)"]
-        HAL_PS4["src/hal/ps4/ (Orbis: VideoOut, AudioOut, Pad, JIT RW/RX, Syscall 500)"]
+        HAL_PS4["src/hal/ps4/ (Orbis: VideoOut, AudioOut, Pad, JIT RW/RX)"]
         HAL_Win["src/hal/win/ (Windows x64: Win32 DIB, WASAPI, XInput/Kbd, VirtualAlloc)"]
         HAL_Mock["src/hal/mock/ (Headless Linux CI: Scripted Input, Fake FS, memfd JIT)"]
     end
@@ -88,6 +88,6 @@ flowchart TD
 4. **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Testing**:
    - Dual-mapped RW/RX x86_64 emitter, `(bank, pc)` block cache, SMC invalidation, HLE `HALT`/DMA fast-paths, verified instruction/block-by-block against the Interpreter in Tier 2 CI.
 5. **Phase 5 — Lightweight 1080p UI, DS4 Controls & Scripted Active E2E Walkthroughs**:
-   - ROM browser (`/data/gbjit/roms/` + `/mnt/usb0..7/`), pause/settings/palette/JIT-toggle modals, `L3+R3`/`F12` Live Debug HUD, and automated E2E controller walkthroughs in CI.
+   - ROM browser (`/data/gbjit/roms/`), pause/settings/palette/JIT-toggle modals, `L3+R3`/`F12` Live Debug HUD, and automated E2E controller walkthroughs in CI.
 6. **Phase 6 — Tier 4 Windows PC Interactive Debugging & `shadPS4` Smoke Test**.
 7. **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** (1–3 batched passes logged in `plan/ps4-runs/`).

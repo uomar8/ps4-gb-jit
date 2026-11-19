@@ -16,7 +16,7 @@
 | **Target Console & Scope** | Original Game Boy (**DMG-01**) only: MBC0, MBC1, MBC2, MBC3 (with RTC stub/clock), MBC5. No GBC in Phase 1. |
 | **CI Test Fixtures** | Public-domain DMG test ROMs & synthesized unit test ROMs: Blargg `cpu_instrs`, `instr_timing`, `dmg-acid2` PPU test, plus synthetic MBC/JIT/SMC unit ROMs generated in `tests/fixtures/`. |
 | **1080p UI Frontend** | Lightweight native 1080p software UI rendered directly into the `sceVideoOut` ARGB8888 framebuffer (8×8 / 16×16 bitmap font scaled cleanly, zero Piglet/SDL2 dependencies, clean `0xE0` JIT authinfo). |
-| **ROM & Save Paths** | `/data/gbjit/roms/` (FTP `:2121`), `/data/gbjit/saves/` (`.sav` & `.state`), plus GoldHEN syscall 500 (`setuid(backup.cr_uid)` immediately after) for read-only browsing of `/mnt/usb0..7/`. |
+| **ROM & Save Paths** | `/data/gbjit/roms/` (FTP `:2121`) and `/data/gbjit/saves/` (`.sav` & `.state`) only — no USB or GoldHEN syscall 500 sandbox escape. |
 | **Repository** | Private GitHub repo `uomar8/ps4-gb-jit`, build-only 3-job GitHub Actions CI (`archive: false` for `.pkg`). |
 
 ## 3. Phase 0 Target-to-Boot Dependency Audit
@@ -45,5 +45,4 @@
 | `libSceAudioOut` | 1 process-lifetime 48 kHz stereo port | **Implemented (PS4 HAL)** | User `0xFF`, `48000` Hz, grain `512`, `sceAudioOutSetVolume` `32768`, dedicated 1 MiB stack thread. |
 | `libScePad` + `libSceUserService` | DS4 buttons, sticks, triggers, `L3+R3` HUD | **Implemented (PS4 HAL)** | `sceUserServiceInitialize` -> `sceUserServiceGetInitialUser` -> `scePadOpen`. |
 | `libSceSystemService` | Hide splash screen, clean exit | **Implemented (PS4 HAL)** | `sceSystemServiceHideSplashScreen()`, exit via `sceSystemServiceLoadExec("exit", NULL)`. |
-| GoldHEN Syscall `500` (`sys_sdk_cmd`) | Optional `/mnt/usb0..7/` read access | **Implemented (PS4 HAL)** | `SIGSYS` ignored, `setuid(backup.cr_uid)` immediately after escalate, restore before exit. |
-| `libScePigletv2VSH` / `libSceNet` / `libSceImeDialog` | Not used | **Deferred / Omitted** | Keeps `eboot.bin` minimal and avoids FW 13.52 Piglet/IME authinfo conflicts. |
+| `libScePigletv2VSH` / `libSceNet` / `libSceImeDialog` / GoldHEN Syscall `500` | Not used | **Omitted** | Keeps `eboot.bin` minimal, avoids FW 13.52 Piglet/IME authinfo conflicts and root-escape edge cases. |

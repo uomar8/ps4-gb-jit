@@ -17,7 +17,7 @@ All outputs are isolated inside `/data/gbjit/` so a single Android/PC FTP (`:212
 | `/data/gbjit/log.txt` | Full timestamped structured log from boot through exit/crash. |
 | `/data/gbjit/klog.txt` | Non-blocking `/dev/klog` snapshot captured at startup and clean exit. |
 | `/data/gbjit/missing_report.txt` | **Stub-Discovery Report**: every unimplemented MMIO register, mapper type, or opcode encountered, sorted by hit count descending. |
-| `/data/gbjit/config.ini` | User/debug overrides (`jit_enabled=1`, `palette=0`, `log_level=INFO`, `usb_scan=1`, `force_interp=0`) editable over FTP without rebuilding a `.pkg`. |
+| `/data/gbjit/config.ini` | User/debug overrides (`jit_enabled=1`, `palette=0`, `log_level=INFO`, `force_interp=0`) editable over FTP without rebuilding a `.pkg`. |
 | `/data/gbjit/roms/` | User `.gb` ROMs uploaded via FTP `:2121`. |
 | `/data/gbjit/saves/` | Battery `.sav` files and `.state` save states. |
 
@@ -33,7 +33,6 @@ Runs automatically at startup **without stopping on the first failure**, logging
 4. `AUDIO_PORT`: Verify single `48000` Hz stereo port open + `sceAudioOutSetVolume(32768)` + 1 silent buffer submit.
 5. `PAD_INIT`: Verify `sceUserService` + `scePadOpen` handle.
 6. `JIT_RWX_DUALMAP`: Allocate dual-mapped RW/RX JIT page, emit `MOV EAX, 0x1337C0DE; RET` into `rw_base`, flush icache, execute `rx_base()`, and assert return value `== 0x1337C0DE`!
-7. `GOLDHEN_USB`: Test GoldHEN syscall `500` (with `SIGSYS` ignored + immediate `setuid(backup.cr_uid)`) and list mounted `/mnt/usb0..7/` drives.
 
 ## 5. Live Debug HUD (`L3 + R3` on PS4 / `F12` on Windows)
 Semi-transparent overlay rendered cleanly in the top-left corner of the 1080p framebuffer:
@@ -46,4 +45,8 @@ Semi-transparent overlay rendered cleanly in the top-left corner of the 1080p fr
 ## 6. Crash Signal Handler
 - Hooks `SIGSEGV`, `SIGBUS`, `SIGILL`, `SIGABRT`, `SIGFPE` (ignores `SIGSYS`).
 - Records `LOG_STEP("...")` breadcrumbs in a lock-free ring buffer.
-- On signal: extracts `mc_rip` / `mc_rsp` / faulting address from `ucontext_t`, writes signal number + `mc_rip` + last 8 `LOG_STEP()` entries directly via POSIX `write()` + `fsync()` to `/data/gbjit/log.txt` and `sceKernelDebugOutText()`, then exits cleanly.
+- On signal:
+  - **PS4 (`__ORBIS__` / `__PS4__`)**: OpenOrbis `musl`'s `ucontext_t` layout does **not** match the FreeBSD/Orbis kernel `ucontext`. Read **`mc_rip` at byte offset `224` (`0xE0`)** and **`mc_rsp` at byte offset `248` (`0xF8`)** directly from `(const uint8_t *)ucontext` via `memcpy` (never `musl` struct fields).
+  - **Linux x64**: Read `REG_RIP` / `REG_RSP` from `ucontext_t`.
+  - **Windows x64**: Use `SetUnhandledExceptionFilter` to read `ContextRecord->Rip` / `Rsp`.
+  - Writes signal/exception code + `mc_rip` + `mc_rsp` + faulting address + last 8 `LOG_STEP()` entries directly via POSIX `write()` + `fsync()` to `/data/gbjit/log.txt` and `sceKernelDebugOutText()`, then exits cleanly.
