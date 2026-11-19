@@ -94,17 +94,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Download Build Artifacts
+      - name: Download Windows Artifact
         uses: actions/download-artifact@v7
         with:
+          name: ps4-gb-jit-win64
           path: dist
 
-      - name: Publish GitHub Release
+      - name: Download Raw PS4 PKG & Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PKG_FILE=$(find dist -name 'PS4-GB-JIT-v*.pkg' | head -n 1)
-          EXE_FILE=$(find dist -name 'ps4-gb-jit-win64.exe' | head -n 1)
-          gh release create "$GITHUB_REF_NAME" "$PKG_FILE" "$EXE_FILE" \
+          PKG_NAME=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name | endswith(".pkg")) | .name' | head -n 1)
+          PKG_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name | endswith(".pkg")) | .id' | head -n 1)
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$PKG_ID/zip" > "dist/$PKG_NAME"
+          ls -lh dist/
+          gh release create "$GITHUB_REF_NAME" "dist/$PKG_NAME" "dist/ps4-gb-jit-win64.exe" \
             --title "PS4 GB-JIT $GITHUB_REF_NAME" \
             --generate-notes
