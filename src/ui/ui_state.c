@@ -342,11 +342,14 @@ void ui_state_render(const UiState *ui, const AppConfig *cfg,
         ui_render_text(fb, w, h, pitch, 48, 76, 2, 0xFF94A3B8U, sub);
 
         if (ui->rom_count == 0) {
+            char empty_hdr[192], step2[192];
+            (void)snprintf(empty_hdr, sizeof(empty_hdr), "NO .GB ROMS FOUND IN %.120s/roms/", hal_fs_get_data_dir());
+            (void)snprintf(step2, sizeof(step2), "2. COPY DMG .GB FILES INTO %.120s/roms/", hal_fs_get_data_dir());
             ui_render_rect(fb, w, h, pitch, 120, 260, w - 240, 260, 0xFF1E293BU);
-            ui_render_text(fb, w, h, pitch, 160, 310, 3, 0xFFFDE047U, "NO .GB ROMS FOUND IN /data/gbjit/roms/");
-            ui_render_text(fb, w, h, pitch, 160, 370, 2, 0xFFE2E8F0U, "1. ENABLE GOLDHEN FTP SERVER (:2121) ON PS4");
-            ui_render_text(fb, w, h, pitch, 160, 410, 2, 0xFFE2E8F0U, "2. COPY DMG .GB FILES INTO /data/gbjit/roms/");
-            ui_render_text(fb, w, h, pitch, 160, 450, 2, 0xFF86EFACU, "3. PRESS TRIANGLE TO REFRESH LIST");
+            ui_render_text(fb, w, h, pitch, 160, 310, 3, 0xFFFDE047U, empty_hdr);
+            ui_render_text(fb, w, h, pitch, 160, 370, 2, 0xFFE2E8F0U, "1. ON PS4: USE GOLDHEN FTP (:2121) | ON PC: OPEN DATA/ROMS FOLDER");
+            ui_render_text(fb, w, h, pitch, 160, 410, 2, 0xFFE2E8F0U, step2);
+            ui_render_text(fb, w, h, pitch, 160, 450, 2, 0xFF86EFACU, "3. PRESS TRIANGLE (PC: R) TO REFRESH LIST");
         } else {
             int max_vis = 14;
             int start = 0;

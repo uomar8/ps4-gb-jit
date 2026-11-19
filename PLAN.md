@@ -20,8 +20,8 @@
 - [x] **Phase 3 — Reference SM83 Interpreter** (100% SM83 primary + `0xCB` ISA, `DAA`, `EI` delay, `HALT`/`STOP`, interrupts, serial capture)
 - [x] **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Verification** (Dual-mapped RW/RX emitter, zero AVX2/FMA3, `(bank, pc)` block cache, WRAM/HRAM SMC safety, automatic EACCES interpreter fallback, 100% bit-exact JIT-vs-Interpreter lockstep pass in ASan/UBSan CI)
 - [x] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/`, Pause/Settings/Error modals, Touchpad=SELECT / R1=START / Options=Pause / L3+R3=HUD, scripted E2E walkthrough in CI)
-- [ ] **Phase 6 — Tier 4 Windows Interactive Verification** (`ps4-gb-jit-win64.exe` downloadable from GitHub Actions)
-- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** (`PS4-GB-JIT-v01.01.pkg` logged in `plan/ps4-runs/`)
+- [ ] **Phase 6 — Tier 4 Windows PC Interactive Testing** *(ACTIVE NOW)*: Verify `ps4-gb-jit-win64.exe` on Windows 10/11 (Win64 JIT lockstep CI + interactive ROM gameplay, audio, save states, settings, `F12` HUD)
+- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** *(DEFERRED — no PS4 available right now; `PS4-GB-JIT-v01.01.pkg` already built & Tier 3 audited, ready when console is available)*
 
 ## Current Blockers / Decisions Pending
-- None — awaiting user Tier 4 Windows `.exe` / Tier 5 PS4 Slim FW 13.52 hardware test feedback.
+- PS4 console temporarily unavailable — focusing on **Tier 4 Windows PC verification** (`ps4-gb-jit-win64.exe`) first; PS4 hardware runs (`plan/ps4-runs/`) will resume once console is available.

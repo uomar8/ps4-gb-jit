@@ -34,6 +34,9 @@ jobs:
           cmake -B build-win -A x64
           cmake --build build-win --config Release
 
+      - name: Run Win64 Dual-Mapped JIT Lockstep Self-Test
+        run: .\build-win\Release\test_win_jit_selftest.exe
+
       - name: Upload Windows HAL Executable
         uses: actions/upload-artifact@v7
         with:
