@@ -11,9 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Clang
-        run: sudo apt-get update && sudo apt-get install -y clang make
-
       - name: Tier 1 Static Lint & HAL Boundary Check
         run: make lint
 
@@ -55,8 +52,8 @@ jobs:
 
       - name: Install LLVM/Clang & .NET Runtime
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang lld llvm make python3 curl dotnet-runtime-8.0
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y --fix-missing clang lld llvm make python3 curl dotnet-runtime-8.0
 
       - name: Cache OpenOrbis v0.5.4 Toolchain
         id: cache-oo
