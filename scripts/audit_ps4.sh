@@ -8,19 +8,20 @@ BUILD_DIR="${3:?Usage: audit_ps4.sh <eboot.elf> <pkg_path> <build_dir>}"
 echo "=== Tier 3 Automated PS4 Binary & PKG Audit ==="
 FAIL=0
 
-# 1. Check for forbidden AVX2 / FMA3 instructions on AMD Jaguar (btver2)
-echo "[1/5] Checking ISA (zero AVX2/FMA3)..."
-if llvm-objdump -d "$ELF_PATH" | grep -iE '\b(vfmadd|vfmsub|vfnmadd|vfnmsub|vpermd|vpermq|vperm2i128|vpblendd|vpbroadcast|vpgather|vpmaskmov|vpsllv|vpsrav|vpsrlv|ymm[0-9]|zmm[0-9])'; then
-    echo "[AUDIT FAIL] Found AVX2/FMA3/256-bit YMM instruction in $ELF_PATH!"
+# 1. Check for forbidden AVX2 / FMA3 / AVX-512 instructions on AMD Jaguar (btver2)
+# Note: btver2 supports AVX1 (including 256-bit FP vmovups %ymm), NOT AVX2/FMA3/AVX-512.
+echo "[1/5] Checking ISA (zero AVX2/FMA3/AVX-512)..."
+if llvm-objdump -d "$ELF_PATH" | grep -iE '\b(vfmadd|vfmsub|vfnmadd|vfnmsub|vpermd|vpermq|vperm2i128|vpblendd|vpbroadcast|vpgather|vpmaskmov|vpsllv|vpsrav|vpsrlv|zmm[0-9])'; then
+    echo "[AUDIT FAIL] Found AVX2/FMA3/AVX-512 instruction in $ELF_PATH!"
     FAIL=1
 else
-    echo "  OK: zero AVX2/FMA3/YMM instructions."
+    echo "  OK: zero AVX2/FMA3/AVX-512 instructions."
 fi
 
-# 2. Check for forbidden undefined symbols
+# 2. Check for forbidden undefined symbols (note: crt1.o references _exit; Tier 1 lint blocks _exit() in src/)
 echo "[2/5] Checking undefined symbols..."
 UNDEF=$(llvm-nm -u "$ELF_PATH" || true)
-for sym in _exit getcwd posix_spawn timer_create lstat readlink; do
+for sym in getcwd posix_spawn timer_create lstat readlink; do
     if echo "$UNDEF" | grep -w "$sym"; then
         echo "[AUDIT FAIL] Forbidden undefined symbol: $sym"
         FAIL=1
