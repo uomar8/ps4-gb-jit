@@ -1,0 +1,8 @@
+build/
+build-win/
+*.pkg
+*.elf
+*.oelf
+*.o
+*.su
+data/

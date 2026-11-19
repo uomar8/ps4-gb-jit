@@ -1,0 +1,85 @@
+name: Build & Verify PS4 GB-JIT
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test-and-lint:
+    name: Tier 1-2 Lint & ASan/UBSan Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Clang
+        run: sudo apt-get update && sudo apt-get install -y clang make
+
+      - name: Tier 1 Static Lint & HAL Boundary Check
+        run: make lint
+
+      - name: Tier 2 Unit, Mock-Orbis & E2E Tests (ASan + UBSan)
+        run: make test
+
+      - name: Build Linux host_run
+        run: make host_run
+
+  build-windows:
+    name: Tier 4 Windows HAL (.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure & Build Windows HAL (.exe)
+        run: |
+          cmake -B build-win -G "Visual Studio 17 2022" -A x64
+          cmake --build build-win --config Release
+
+      - name: Upload Windows HAL Executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: ps4-gb-jit-win64
+          path: build-win/Release/ps4-gb-jit-win64.exe
+
+  build-ps4:
+    name: Tier 3 PS4 PKG Build & Audit
+    runs-on: ubuntu-22.04
+    needs: [test-and-lint]
+    env:
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "1"
+      DOTNET_BUNDLE_EXTRACT_BASE_DIR: "/tmp/dotnet_extract"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install LLVM/Clang & .NET Runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm make python3 curl dotnet-runtime-8.0
+
+      - name: Cache OpenOrbis v0.5.4 Toolchain
+        id: cache-oo
+        uses: actions/cache@v6
+        with:
+          path: /tmp/oo-toolchain
+          key: openorbis-v0.5.4-llvm18
+
+      - name: Download OpenOrbis v0.5.4
+        if: steps.cache-oo.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/oo-extract /tmp/oo-toolchain
+          curl -sSL "https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/download/v0.5.4/toolchain-llvm-18.tar.gz" -o /tmp/oo.tar.gz
+          tar -xzf /tmp/oo.tar.gz -C /tmp/oo-extract
+          ROOT=$(dirname "$(find /tmp/oo-extract -type d -name lib | head -n 1)")
+          cp -a "$ROOT"/. /tmp/oo-toolchain/
+          rm -rf /tmp/oo-extract /tmp/oo.tar.gz
+
+      - name: Build PS4 eboot.bin, PKG & Run Tier 3 Audit
+        env:
+          OO_PS4_TOOLCHAIN: /tmp/oo-toolchain
+        run: |
+          make ps4
+
+      - name: Upload PS4 PKG (direct download, archive=false)
+        uses: actions/upload-artifact@v7
+        with:
+          path: PS4-GB-JIT-v*.pkg
+          archive: false
