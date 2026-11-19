@@ -93,8 +93,15 @@ ps4: $(PS4_BUILD)/eboot.elf
 	@if [ ! -f assets/icon0.png ] || [ ! -f assets/pic0.png ]; then python3 scripts/gen_assets.py; fi
 	cp assets/icon0.png $(PKG_STAGE)/sce_sys/icon0.png
 	cp assets/pic0.png  $(PKG_STAGE)/sce_sys/pic0.png
-	cp $(OO_PS4_TOOLCHAIN)/bin/data/modules/libc.prx $(PKG_STAGE)/sce_module/libc.prx
-	cp $(OO_PS4_TOOLCHAIN)/bin/data/modules/libSceFios2.prx $(PKG_STAGE)/sce_module/libSceFios2.prx
+	@LIBC_PRX=$$(find "$(OO_PS4_TOOLCHAIN)" -name "libc.prx" | head -n 1); \
+	FIOS_PRX=$$(find "$(OO_PS4_TOOLCHAIN)" -name "libSceFios2.prx" | head -n 1); \
+	if [ -z "$$LIBC_PRX" ] || [ -z "$$FIOS_PRX" ]; then \
+		echo "ERROR: Missing libc.prx or libSceFios2.prx in $(OO_PS4_TOOLCHAIN)"; \
+		find "$(OO_PS4_TOOLCHAIN)" -name "*.prx" || true; \
+		exit 1; \
+	fi; \
+	cp "$$LIBC_PRX" $(PKG_STAGE)/sce_module/libc.prx; \
+	cp "$$FIOS_PRX" $(PKG_STAGE)/sce_module/libSceFios2.prx
 	@PKGTOOL="$(OO_PS4_TOOLCHAIN)/bin/linux/PkgTool.Core"; \
 	if [ ! -x "$$PKGTOOL" ]; then PKGTOOL="dotnet --roll-forward Major $(OO_PS4_TOOLCHAIN)/bin/windows/PkgTool.Core.dll"; fi; \
 	$$PKGTOOL sfo_new $(PKG_STAGE)/sce_sys/param.sfo; \
