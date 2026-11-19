@@ -98,16 +98,28 @@ void ui_render_rect(uint32_t *fb, int w, int h, int pitch,
 void ui_render_rect_alpha(uint32_t *fb, int w, int h, int pitch,
                           int x, int y, int rw, int rh, uint32_t argb) {
     if (!fb) return;
-    uint32_t a = (argb >> 24) & 0xFFU;
-    uint32_t sr = (argb >> 16) & 0xFFU;
-    uint32_t sg = (argb >> 8) & 0xFFU;
-    uint32_t sb = argb & 0xFFU;
-    uint32_t inv_a = 255U - a;
-
     int x0 = x < 0 ? 0 : x;
     int y0 = y < 0 ? 0 : y;
     int x1 = (x + rw > w) ? w : (x + rw);
     int y1 = (y + rh > h) ? h : (y + rh);
+
+    /* Fast path for dark modal scrim (rgb == 0): quarter brightness with zero divisions */
+    if ((argb & 0x00FFFFFFU) == 0U) {
+        for (int py = y0; py < y1; py++) {
+            uint32_t *row = fb + (size_t)py * (size_t)pitch;
+            for (int px = x0; px < x1; px++) {
+                row[px] = 0xFF000000U | ((row[px] >> 2) & 0x003F3F3FU);
+            }
+        }
+        return;
+    }
+
+    uint32_t a = (argb >> 24) & 0xFFU;
+    uint32_t sr = (argb >> 16) & 0xFFU;
+    uint32_t sg = (argb >> 8) & 0xFFU;
+    uint32_t sb = argb & 0xFFU;
+    uint32_t inv_a = 256U - a;
+
     for (int py = y0; py < y1; py++) {
         uint32_t *row = fb + (size_t)py * (size_t)pitch;
         for (int px = x0; px < x1; px++) {
@@ -115,9 +127,9 @@ void ui_render_rect_alpha(uint32_t *fb, int w, int h, int pitch,
             uint32_t dr = (d >> 16) & 0xFFU;
             uint32_t dg = (d >> 8) & 0xFFU;
             uint32_t db = d & 0xFFU;
-            uint32_t or_ = (sr * a + dr * inv_a) / 255U;
-            uint32_t og_ = (sg * a + dg * inv_a) / 255U;
-            uint32_t ob_ = (sb * a + db * inv_a) / 255U;
+            uint32_t or_ = (sr * a + dr * inv_a) >> 8;
+            uint32_t og_ = (sg * a + dg * inv_a) >> 8;
+            uint32_t ob_ = (sb * a + db * inv_a) >> 8;
             row[px] = 0xFF000000U | (or_ << 16) | (og_ << 8) | ob_;
         }
     }

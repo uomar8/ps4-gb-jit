@@ -61,8 +61,20 @@ AppResult hal_jit_alloc(HalJitArena *arena, size_t size) {
     int rw_fd = -1;
     int32_t rc = g_fn_jit_create(NULL, size, PS4_PROT_RWX, &rx_fd);
     if (rc < 0 || rx_fd < 0) {
-        LOG_WARN("JIT", "sceKernelJitCreateSharedMemory failed rc=0x%08x (%s)",
+        LOG_WARN("JIT", "sceKernelJitCreateSharedMemory failed rc=0x%08x (%s) — trying GoldHEN RWX mmap",
                  (uint32_t)rc, dbg_sce_strerror(rc));
+        void *rwx = mmap(NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                         MAP_PRIVATE | MAP_ANON, -1, 0);
+        if (rwx != MAP_FAILED && rwx != NULL) {
+            arena->rx_base = rwx;
+            arena->rw_base = rwx;
+            arena->size = size;
+            arena->rx_fd = -1;
+            arena->rw_fd = -1;
+            LOG_INFO("JIT", "GoldHEN RWX mmap arena ready ptr=%p size=0x%zx", rwx, size);
+            return APP_OK;
+        }
+        LOG_WARN("JIT", "GoldHEN RWX mmap unavailable — falling back to interpreter");
         return APP_ERR_JIT_UNAVAIL;
     }
 
@@ -107,7 +119,7 @@ void hal_jit_free(HalJitArena *arena) {
     if (arena->rx_base) {
         (void)munmap(arena->rx_base, arena->size);
     }
-    if (arena->rw_base) {
+    if (arena->rw_base && arena->rw_base != arena->rx_base) {
         (void)munmap(arena->rw_base, arena->size);
     }
     if (arena->rw_fd >= 0) {

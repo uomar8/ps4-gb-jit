@@ -223,11 +223,11 @@ void ui_state_update(UiState *ui, AppConfig *cfg, GbMachine *gb,
                 if (inp->buttons & HAL_BTN_UP)       keys |= GB_KEY_UP;
                 if (inp->buttons & HAL_BTN_DOWN)     keys |= GB_KEY_DOWN;
                 if (cfg->swap_ab) {
-                    if (inp->buttons & HAL_BTN_CIRCLE) keys |= GB_KEY_A;
+                    if (inp->buttons & HAL_BTN_SQUARE) keys |= GB_KEY_A;
                     if (inp->buttons & HAL_BTN_CROSS)  keys |= GB_KEY_B;
                 } else {
                     if (inp->buttons & HAL_BTN_CROSS)  keys |= GB_KEY_A;
-                    if (inp->buttons & HAL_BTN_CIRCLE) keys |= GB_KEY_B;
+                    if (inp->buttons & HAL_BTN_SQUARE) keys |= GB_KEY_B;
                 }
                 if (inp->buttons & HAL_BTN_TOUCHPAD) keys |= GB_KEY_SELECT;
                 if (inp->buttons & HAL_BTN_R1)       keys |= GB_KEY_START;
