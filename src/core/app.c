@@ -176,13 +176,17 @@ AppResult app_run(uint32_t max_frames) {
             fps_t0 = now;
         }
 
-        /* Frame pacing (~60 Hz) when not fast-forwarding and not in headless capped run */
+        /* Frame pacing (~60 Hz) on host/Win32 (PS4 already hardware-VSyncs in hal_video_present) */
+#if !defined(__ORBIS__) && !defined(__PS4__)
         if (!ui->fast_forward && max_frames == 0) {
             uint64_t elapsed = now - frame_start;
             if (elapsed < 16600ULL) {
                 hal_sys_sleep_us((uint32_t)(16600ULL - elapsed));
             }
         }
+#else
+        (void)frame_start;
+#endif
     }
 
     LOG_STEP("app:shutdown");

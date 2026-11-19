@@ -377,11 +377,11 @@ void ui_state_render(const UiState *ui, const AppConfig *cfg,
         hle_ppu_blit_1080p(&gb->ppu, cfg->palette_index, fb, w, h, pitch);
     }
 
-    /* Modals */
+    /* Modals — 100% write-only (NEVER read back from PS4 DirectMemory framebuffer!) */
     if (ui->zone == UI_ZONE_PAUSE_MODAL) {
-        ui_render_rect_alpha(fb, w, h, pitch, 0, 0, w, h, 0xA0000000U);
         int mx = (w - 640) / 2, my = (h - 500) / 2;
-        ui_render_rect(fb, w, h, pitch, mx, my, 640, 500, 0xFF1E293BU);
+        ui_render_rect(fb, w, h, pitch, mx - 6, my - 6, 652, 512, 0xFF38BDF8U);
+        ui_render_rect(fb, w, h, pitch, mx, my, 640, 500, 0xFF0F172AU);
         ui_render_text(fb, w, h, pitch, mx + 36, my + 28, 3, 0xFF38BDF8U, "PAUSED");
 
         static const char *const kPauseItems[6] = {
@@ -402,9 +402,9 @@ void ui_state_render(const UiState *ui, const AppConfig *cfg,
                            sel ? 0xFFFFFFFFU : 0xFFCBD5E1U, kPauseItems[i]);
         }
     } else if (ui->zone == UI_ZONE_SETTINGS_MODAL) {
-        ui_render_rect_alpha(fb, w, h, pitch, 0, 0, w, h, 0xB0000000U);
         int mx = (w - 760) / 2, my = (h - 420) / 2;
-        ui_render_rect(fb, w, h, pitch, mx, my, 760, 420, 0xFF1E293BU);
+        ui_render_rect(fb, w, h, pitch, mx - 6, my - 6, 772, 432, 0xFF38BDF8U);
+        ui_render_rect(fb, w, h, pitch, mx, my, 760, 420, 0xFF0F172AU);
         ui_render_text(fb, w, h, pitch, mx + 36, my + 28, 3, 0xFF38BDF8U, "SETTINGS");
 
         char lines[4][96];
@@ -413,7 +413,7 @@ void ui_state_render(const UiState *ui, const AppConfig *cfg,
         (void)snprintf(lines[1], sizeof(lines[1]), "PALETTE    : %s",
                        hle_ppu_palette_name(cfg->palette_index));
         (void)snprintf(lines[2], sizeof(lines[2]), "SWAP A/B   : %s",
-                       cfg->swap_ab ? "ON" : "OFF");
+                       cfg->swap_ab ? "ON (SQ=A, X=B)" : "OFF (X=A, SQ=B)");
         (void)snprintf(lines[3], sizeof(lines[3]), "BACK");
 
         for (int i = 0; i < 4; ++i) {
@@ -426,17 +426,18 @@ void ui_state_render(const UiState *ui, const AppConfig *cfg,
                            sel ? 0xFFFFFFFFU : 0xFFCBD5E1U, lines[i]);
         }
     } else if (ui->zone == UI_ZONE_ERROR_MODAL) {
-        ui_render_rect_alpha(fb, w, h, pitch, 0, 0, w, h, 0xB0000000U);
         int mx = (w - 820) / 2, my = (h - 260) / 2;
+        ui_render_rect(fb, w, h, pitch, mx - 6, my - 6, 832, 272, 0xFFFCA5A5U);
         ui_render_rect(fb, w, h, pitch, mx, my, 820, 260, 0xFF450A0AU);
         ui_render_text(fb, w, h, pitch, mx + 36, my + 32, 3, 0xFFFCA5A5U, "ERROR");
         ui_render_text(fb, w, h, pitch, mx + 36, my + 104, 2, 0xFFFFFFFFU, ui->error_msg);
         ui_render_text(fb, w, h, pitch, mx + 36, my + 190, 2, 0xFF94A3B8U, "PRESS [X] OR [O] TO DISMISS");
     }
 
-    /* Toast banner */
+    /* Toast banner (write-only) */
     if (ui->toast_frames > 0 && ui->toast_msg[0] != '\0') {
-        ui_render_rect_alpha(fb, w, h, pitch, w - 520, 24, 496, 52, 0xD00F172AU);
+        ui_render_rect(fb, w, h, pitch, w - 524, 20, 504, 60, 0xFF86EFACU);
+        ui_render_rect(fb, w, h, pitch, w - 520, 24, 496, 52, 0xFF0F172AU);
         ui_render_text(fb, w, h, pitch, w - 500, 40, 2, 0xFF86EFACU, ui->toast_msg);
     }
 }

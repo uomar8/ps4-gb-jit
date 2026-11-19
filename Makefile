@@ -2,7 +2,7 @@
 APP_TITLE  := PS4 GB-JIT
 TITLE_ID   := GBJT00001
 CONTENT_ID := IV0000-GBJT00001_00-PS4GBJIT00000001
-APP_VER    := 01.04
+APP_VER    := 01.05
 PKG_NAME   := PS4-GB-JIT-v$(APP_VER).pkg
 
 # JIT-capable authinfo (0xE0 bit set at capability byte 0x47 -> 0xF0)

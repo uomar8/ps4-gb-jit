@@ -13,7 +13,7 @@ void ui_hud_render(uint32_t *fb, int w, int h, int pitch, const UiHudMetrics *m)
     const int box_w = 1120;
     const int box_h = 340;
 
-    ui_render_rect_alpha(fb, w, h, pitch, x0, y0, box_w, box_h, 0xCC10141EU);
+    ui_render_rect(fb, w, h, pitch, x0, y0, box_w, box_h, 0xFF10141EU);
     ui_render_rect(fb, w, h, pitch, x0, y0, box_w, 4, 0xFF38BDF8U);
 
     char line[192];
