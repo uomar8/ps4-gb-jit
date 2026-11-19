@@ -56,6 +56,7 @@ if(WIN32)
         src/debug/dbg_log.c
         src/debug/dbg_stub.c
         src/hal/win/hal_win_sys.c
+        src/hal/win/hal_win_audio.c
         src/hal/win/hal_win_fs.c
         src/hal/win/hal_win_jit.c
     )
