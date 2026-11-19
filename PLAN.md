@@ -20,8 +20,8 @@
 - [x] **Phase 3 — Reference SM83 Interpreter** (100% SM83 primary + `0xCB` ISA, `DAA`, `EI` delay, `HALT`/`STOP`, interrupts, serial capture)
 - [x] **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Verification** (Dual-mapped RW/RX emitter, zero AVX2/FMA3, `(bank, pc)` block cache, WRAM/HRAM SMC safety, automatic EACCES interpreter fallback, 100% bit-exact JIT-vs-Interpreter lockstep pass in ASan/UBSan CI)
 - [x] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/`, Pause/Settings/Error modals, Touchpad=SELECT / R1=START / Options=Pause / L3+R3=HUD, scripted E2E walkthrough in CI)
-- [ ] **Phase 6 — Tier 4 Windows PC Interactive Testing** *(ACTIVE NOW)*: Verify `ps4-gb-jit-win64.exe` on Windows 10/11 (Win64 JIT lockstep CI + interactive ROM gameplay, audio, save states, settings, `F12` HUD)
-- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** *(DEFERRED — no PS4 available right now; `PS4-GB-JIT-v01.01.pkg` already built & Tier 3 audited, ready when console is available)*
+- [x] **Phase 6 — Tier 4 Windows PC Interactive Testing**: Verified on Windows 10/11 (`ps4-gb-jit-win64.exe`, 6/6 Boot Self-Test PASS, 7,210 frames of *Super Mario Land* `MBC1` under x86_64 JIT, HUD + Pause Modal + clean exit, 0 errors; Win64 JIT lockstep verified in CI)
+- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** *(DEFERRED — awaiting console availability; `PS4-GB-JIT-v01.01.pkg` already built & Tier 3 audited in CI)*
 
 ## Current Blockers / Decisions Pending
-- PS4 console temporarily unavailable — focusing on **Tier 4 Windows PC verification** (`ps4-gb-jit-win64.exe`) first; PS4 hardware runs (`plan/ps4-runs/`) will resume once console is available.
+- PS4 console temporarily unavailable — Tiers 1–4 are 100% complete and verified; ready for Tier 5 PS4 Slim FW 13.52 hardware runs (`plan/ps4-runs/`) whenever your PS4 is available.
