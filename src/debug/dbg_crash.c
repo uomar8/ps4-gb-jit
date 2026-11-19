@@ -115,7 +115,12 @@ static void dbg_posix_signal_handler(int sig, siginfo_t *info, void *ucontext) {
 void dbg_crash_install(void) {
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
+#if defined(__ORBIS__) || defined(__PS4__)
+    /* OpenOrbis v0.5.4 signal.h macro typo: sa_sigaction expands to __sa_handler.sa_sigaction */
+    sa.__sa_handler.__sa_sigaction = dbg_posix_signal_handler;
+#else
     sa.sa_sigaction = dbg_posix_signal_handler;
+#endif
     sa.sa_flags = SA_SIGINFO;
     sigemptyset(&sa.sa_mask);
 
