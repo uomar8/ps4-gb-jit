@@ -71,6 +71,10 @@ AppResult app_run(uint32_t max_frames) {
 
     LOG_INFO("SYS", "ps4-gb-jit booting (DMG-01 x86_64 JIT + HLE)");
 
+    char klog_path[APP_MAX_PATH];
+    (void)snprintf(klog_path, sizeof(klog_path), "%s/klog.txt", hal_fs_get_data_dir());
+    (void)hal_sys_snapshot_klog(klog_path);
+
     AppConfig cfg;
     app_load_config(&cfg);
     dbg_log_set_level((DbgLogLevel)cfg.log_level);
@@ -88,8 +92,6 @@ AppResult app_run(uint32_t max_frames) {
     DbgSelfTestReport report;
     bool selftest_ok = dbg_selftest_run(&report);
 
-    char klog_path[APP_MAX_PATH];
-    (void)snprintf(klog_path, sizeof(klog_path), "%s/klog.txt", hal_fs_get_data_dir());
     (void)hal_sys_snapshot_klog(klog_path);
 
     /* Allocate emulator & UI state on heap to keep PS4 stack frames << 32 KiB */

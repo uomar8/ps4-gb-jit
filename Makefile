@@ -2,7 +2,7 @@
 APP_TITLE  := PS4 GB-JIT
 TITLE_ID   := GBJT00001
 CONTENT_ID := IV0000-GBJT00001_00-PS4GBJIT00000001
-APP_VER    := 01.02
+APP_VER    := 01.03
 PKG_NAME   := PS4-GB-JIT-v$(APP_VER).pkg
 
 # JIT-capable authinfo (0xE0 bit set at capability byte 0x47 -> 0xF0)
@@ -62,7 +62,7 @@ PS4_CFLAGS   := --target=x86_64-pc-freebsd12-elf -std=c11 -O3 -march=btver2 -mtu
                 -Wall -Wextra -Werror=vla -Werror=alloca \
                 -D__ORBIS__ -D__PS4__ -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L \
                 -Isrc -isysroot $(OO_PS4_TOOLCHAIN) -isystem $(OO_PS4_TOOLCHAIN)/include
-PS4_LIBS     := -lc -lkernel -lScePosix -lSceVideoOut -lSceAudioOut -lScePad -lSceUserService -lSceSystemService
+PS4_LIBS     := -lc -lkernel -lScePosix -lSceSysmodule -lSceVideoOut -lSceAudioOut -lScePad -lSceUserService -lSceSystemService
 PS4_LDFLAGS  := -m elf_x86_64 -pie --script $(OO_PS4_TOOLCHAIN)/link.x --eh-frame-hdr \
                 -L$(OO_PS4_TOOLCHAIN)/lib $(PS4_LIBS) $(OO_PS4_TOOLCHAIN)/lib/crt1.o
 

@@ -8,9 +8,16 @@
 #include <unistd.h>
 
 #include <orbis/libkernel.h>
+#include <orbis/Sysmodule.h>
 #include <orbis/SystemService.h>
 
 AppResult hal_sys_init(void) {
+    /* Load internal firmware sysmodules BEFORE calling UserService/Pad/VideoOut/AudioOut! */
+    (void)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_SYSTEM_SERVICE);
+    (void)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_USER_SERVICE);
+    (void)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_PAD);
+    (void)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_VIDEO_OUT);
+    (void)sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_AUDIO_OUT);
     return APP_OK;
 }
 

@@ -13,18 +13,24 @@ static int32_t g_user_id = -1;
 static int32_t g_pad_handle = -1;
 
 AppResult hal_input_init(void) {
-    int32_t rc = sceUserServiceInitialize(NULL);
+    LOG_INFO("INP", "step 1: sceUserServiceInitialize");
+    OrbisUserServiceInitializeParams params;
+    memset(&params, 0, sizeof(params));
+    params.priority = 700; /* ORBIS_KERNEL_PRIO_FIFO_DEFAULT */
+    int32_t rc = sceUserServiceInitialize(&params);
     if (rc < 0 && (uint32_t)rc != 0x80960003U /* ALREADY_INITIALIZED */) {
         LOG_RC_ERROR("INP", "sceUserServiceInitialize failed", rc);
         return APP_ERR_INPUT_INIT;
     }
 
+    LOG_INFO("INP", "step 2: sceUserServiceGetInitialUser");
     rc = sceUserServiceGetInitialUser(&g_user_id);
     if (rc < 0) {
         LOG_RC_ERROR("INP", "sceUserServiceGetInitialUser failed", rc);
         return APP_ERR_INPUT_INIT;
     }
 
+    LOG_INFO("INP", "step 3: scePadInit + scePadOpen user_id=%d", g_user_id);
     rc = scePadInit();
     if (rc < 0) {
         LOG_RC_ERROR("INP", "scePadInit failed", rc);
