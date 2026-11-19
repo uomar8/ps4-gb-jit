@@ -10,9 +10,6 @@
 #include <orbis/libkernel.h>
 #include <orbis/SystemService.h>
 
-/* Explicit prototype for klog output (always present in libkernel) */
-int sceKernelDebugOutText(int channel, const char *text);
-
 AppResult hal_sys_init(void) {
     return APP_OK;
 }
