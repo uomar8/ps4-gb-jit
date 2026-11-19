@@ -11,13 +11,24 @@ PS4_AUTHINFO := 000000000000000000000000001C004000FF0000000000800000000000000000
 
 COMMON_SRCS := \
 	src/core/app.c \
+	src/core/gb_machine.c \
+	src/core/mem/cart.c \
+	src/core/mem/bus.c \
+	src/core/hle/timer.c \
+	src/core/hle/ppu.c \
+	src/core/hle/apu.c \
+	src/core/cpu/sm83_interp.c \
+	src/core/jit/jit_x64_emit.c \
+	src/core/jit/jit_engine.c \
+	src/core/jit/jit_compile.c \
 	src/debug/dbg_sce_err.c \
 	src/debug/dbg_log.c \
 	src/debug/dbg_stub.c \
 	src/debug/dbg_crash.c \
 	src/debug/dbg_selftest.c \
 	src/ui/ui_render.c \
-	src/ui/ui_hud.c
+	src/ui/ui_hud.c \
+	src/ui/ui_state.c
 
 MOCK_SRCS := \
 	src/hal/mock/hal_mock_sys.c \
@@ -70,6 +81,18 @@ test:
 		tests/unit/test_phase1_harness.c $(COMMON_SRCS) $(MOCK_SRCS) \
 		-o build/test/test_phase1_harness
 	./build/test/test_phase1_harness
+	$(HOST_CC) $(HOST_CFLAGS) $(SAN_FLAGS) \
+		tests/unit/test_mbc_hle.c $(COMMON_SRCS) $(MOCK_SRCS) \
+		-o build/test/test_mbc_hle
+	./build/test/test_mbc_hle
+	$(HOST_CC) $(HOST_CFLAGS) $(SAN_FLAGS) \
+		tests/unit/test_sm83_jit_lockstep.c $(COMMON_SRCS) $(MOCK_SRCS) \
+		-o build/test/test_sm83_jit_lockstep
+	./build/test/test_sm83_jit_lockstep
+	$(HOST_CC) $(HOST_CFLAGS) $(SAN_FLAGS) \
+		tests/e2e/test_e2e_walkthrough.c $(COMMON_SRCS) $(MOCK_SRCS) \
+		-o build/test/test_e2e_walkthrough
+	./build/test/test_e2e_walkthrough
 
 host_run:
 	@mkdir -p build/host

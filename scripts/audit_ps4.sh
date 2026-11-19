@@ -45,8 +45,8 @@ else
     echo "  WARN: no .su files found in $BUILD_DIR."
 fi
 
-# 4. Verify required retail PRXs inside PKG
-echo "[4/5] Checking PKG entries for sce_module/libc.prx & libSceFios2.prx..."
+# 4. Verify SC entries in PKG and required retail PRXs in PFS payload
+echo "[4/5] Checking PKG SC entries and PFS payload (eboot.bin, libc.prx, libSceFios2.prx)..."
 PKGTOOL="${OO_PS4_TOOLCHAIN}/bin/linux/PkgTool.Core"
 if [ ! -x "$PKGTOOL" ]; then
     PKGTOOL_CMD=(dotnet --roll-forward Major "${OO_PS4_TOOLCHAIN}/bin/windows/PkgTool.Core.dll")
@@ -56,14 +56,25 @@ fi
 
 ENTRIES=$("${PKGTOOL_CMD[@]}" pkg_listentries "$PKG_PATH")
 echo "$ENTRIES"
-if ! echo "$ENTRIES" | grep -q "sce_module/libc.prx"; then
-    echo "[AUDIT FAIL] Missing sce_module/libc.prx in $PKG_PATH"
-    FAIL=1
-fi
-if ! echo "$ENTRIES" | grep -q "sce_module/libSceFios2.prx"; then
-    echo "[AUDIT FAIL] Missing sce_module/libSceFios2.prx in $PKG_PATH"
-    FAIL=1
-fi
+for sc_entry in PARAM_SFO ICON0_PNG PIC0_PNG; do
+    if ! echo "$ENTRIES" | grep -q "$sc_entry"; then
+        echo "[AUDIT FAIL] Missing SC entry $sc_entry in $PKG_PATH"
+        FAIL=1
+    fi
+done
+
+PKG_STAGE="build/pkg_stage"
+for pfs_file in eboot.bin sce_module/libc.prx sce_module/libSceFios2.prx; do
+    if [ ! -s "$PKG_STAGE/$pfs_file" ]; then
+        echo "[AUDIT FAIL] Missing or empty PFS payload file: $PKG_STAGE/$pfs_file"
+        FAIL=1
+    fi
+    if ! grep -q "targ_path=\"$pfs_file\"" "$PKG_STAGE/pkg.gp4"; then
+        echo "[AUDIT FAIL] $pfs_file not declared in $PKG_STAGE/pkg.gp4"
+        FAIL=1
+    fi
+done
+echo "  OK: SC entries and PFS retail PRXs verified."
 
 # 5. Validate PKG integrity
 echo "[5/5] Running PkgTool.Core pkg_validate..."

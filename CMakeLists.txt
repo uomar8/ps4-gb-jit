@@ -7,6 +7,16 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(COMMON_SRCS
     src/main.c
     src/core/app.c
+    src/core/gb_machine.c
+    src/core/mem/cart.c
+    src/core/mem/bus.c
+    src/core/hle/timer.c
+    src/core/hle/ppu.c
+    src/core/hle/apu.c
+    src/core/cpu/sm83_interp.c
+    src/core/jit/jit_x64_emit.c
+    src/core/jit/jit_engine.c
+    src/core/jit/jit_compile.c
     src/debug/dbg_sce_err.c
     src/debug/dbg_log.c
     src/debug/dbg_stub.c
@@ -14,6 +24,7 @@ set(COMMON_SRCS
     src/debug/dbg_selftest.c
     src/ui/ui_render.c
     src/ui/ui_hud.c
+    src/ui/ui_state.c
 )
 
 if(WIN32)

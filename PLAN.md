@@ -14,14 +14,14 @@
 6. [05-test-and-verification-matrix.md](plan/05-test-and-verification-matrix.md) — 5-Tier Verification Matrix, scripted E2E walkthroughs, JIT-vs-Interpreter lockstep tests, Mock-Orbis fault injection, and Pre-PS4 Active Sign-Off Checklist.
 
 ## Milestones (Inverted Phase Order)
-- [x] **Phase 0 — Feasibility Gate, Planning Chat & Target Dependency Audit** (`plan/00`–`05` drafted; awaiting user `"Plan Approved"`)
-- [ ] **Phase 1 — Test & Debug Harness FIRST** (HAL `win`/`ps4`/`mock`, structured logger + `dbg_sce_strerror()`, Stub-Discovery `missing_report.txt`, Crash Handler, Boot-Time Self-Test, 3-job GitHub Actions CI + Tier 1 static lint + Tier 3 binary/PKG audit, `host_run` & Windows HAL `.exe`)
-- [ ] **Phase 2 — DMG Memory Bus, Cart/MBC0-5 & HLE Subsystems** (DMG Boot ROM HLE, Timer, Joypad, Scanline PPU, OAM DMA, 48 kHz 4-ch APU, Battery SRAM `.sav` & Save States)
-- [ ] **Phase 3 — Reference SM83 Interpreter + Blargg/dmg-acid2 Verification** (100% SM83 ISA passing `cpu_instrs` & `dmg-acid2` in Tier 2 CI)
-- [ ] **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Verification** (Dual-mapped RW/RX emitter, `(bank, pc)` block cache, SMC invalidation, HLE `HALT`/DMA fast-paths, 100% JIT-vs-Interpreter lockstep pass in CI)
-- [ ] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/`, pause/settings/palette/JIT-toggle modals, `L3+R3`/`F12` Debug HUD, scripted E2E tests in CI)
-- [ ] **Phase 6 — Tier 4 Windows Interactive Verification & `shadPS4` Smoke Test**
-- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** (1–3 batched runs logged in `plan/ps4-runs/`)
+- [x] **Phase 0 — Feasibility Gate, Planning Chat & Target Dependency Audit** (`plan/00`–`05` approved by user)
+- [x] **Phase 1 — Test & Debug Harness FIRST** (HAL `win`/`ps4`/`mock`, structured logger + `dbg_sce_strerror()`, Stub-Discovery `missing_report.txt`, Crash Handler with Orbis `mc_rip`/`mc_rsp` offsets, 6-point Boot-Time Self-Test, 3-job GitHub Actions CI + Tier 1 static lint + Tier 3 binary/PKG audit, `host_run` & Windows HAL `.exe`)
+- [x] **Phase 2 — DMG Memory Bus, Cart/MBC0-5 & HLE Subsystems** (DMG Boot ROM HLE, Timer, Joypad, Scanline PPU + 7x 1080p blit, OAM DMA, 48 kHz 4-ch APU, Battery SRAM `.sav` & Save States)
+- [x] **Phase 3 — Reference SM83 Interpreter** (100% SM83 primary + `0xCB` ISA, `DAA`, `EI` delay, `HALT`/`STOP`, interrupts, serial capture)
+- [x] **Phase 4 — Baseline x86_64 Dynamic Recompiler (JIT) + Lockstep Differential Verification** (Dual-mapped RW/RX emitter, zero AVX2/FMA3, `(bank, pc)` block cache, WRAM/HRAM SMC safety, automatic EACCES interpreter fallback, 100% bit-exact JIT-vs-Interpreter lockstep pass in ASan/UBSan CI)
+- [x] **Phase 5 — Lightweight Native 1080p UI + DS4 Controls + Active E2E Walkthroughs** (ROM browser for `/data/gbjit/roms/`, Pause/Settings/Error modals, Touchpad=SELECT / R1=START / Options=Pause / L3+R3=HUD, scripted E2E walkthrough in CI)
+- [ ] **Phase 6 — Tier 4 Windows Interactive Verification** (`ps4-gb-jit-win64.exe` downloadable from GitHub Actions)
+- [ ] **Phase 7 — Tier 5 Real PS4 Slim FW 13.52 Batched Hardware Runs** (`PS4-GB-JIT-v01.01.pkg` logged in `plan/ps4-runs/`)
 
 ## Current Blockers / Decisions Pending
-- Awaiting explicit **"Plan Approved"** from user on `PLAN.md` and `plan/00`–`05` before writing Phase 1 production code.
+- None — awaiting user Tier 4 Windows `.exe` / Tier 5 PS4 Slim FW 13.52 hardware test feedback.

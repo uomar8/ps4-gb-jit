@@ -1,4 +1,6 @@
 #include "app.h"
+#include "gb_machine.h"
+#include "jit/jit_engine.h"
 #include "../hal/hal.h"
 #include "../debug/dbg_log.h"
 #include "../debug/dbg_stub.h"
@@ -6,6 +8,7 @@
 #include "../debug/dbg_selftest.h"
 #include "../ui/ui_render.h"
 #include "../ui/ui_hud.h"
+#include "../ui/ui_state.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,15 +27,7 @@ static void app_load_config(AppConfig *cfg) {
     uint8_t *buf = NULL;
     size_t sz = 0;
     if (hal_fs_read_file(cfg_path, &buf, &sz) != APP_OK) {
-        /* Write default config.ini on first run */
-        const char def[] =
-            "# ps4-gb-jit config (editable via FTP :2121)\n"
-            "jit_enabled=1\n"
-            "force_interp=0\n"
-            "palette=0\n"
-            "swap_ab=0\n"
-            "log_level=1\n";
-        (void)hal_fs_write_file(cfg_path, (const uint8_t *)def, sizeof(def) - 1);
+        ui_state_save_config(cfg);
         return;
     }
 
@@ -74,7 +69,7 @@ AppResult app_run(uint32_t max_frames) {
     dbg_log_init(log_path, DBG_LVL_INFO);
     dbg_stub_reset();
 
-    LOG_INFO("SYS", "ps4-gb-jit booting (Phase 1 Harness)");
+    LOG_INFO("SYS", "ps4-gb-jit booting (DMG-01 x86_64 JIT + HLE)");
 
     AppConfig cfg;
     app_load_config(&cfg);
@@ -95,50 +90,73 @@ AppResult app_run(uint32_t max_frames) {
     (void)snprintf(klog_path, sizeof(klog_path), "%s/klog.txt", hal_fs_get_data_dir());
     (void)hal_sys_snapshot_klog(klog_path);
 
+    /* Allocate emulator & UI state on heap to keep PS4 stack frames << 32 KiB */
+    GbMachine *gb = (GbMachine *)calloc(1, sizeof(GbMachine));
+    UiState   *ui = (UiState *)calloc(1, sizeof(UiState));
+    JitEngine jit;
+    memset(&jit, 0, sizeof(jit));
+
+    if (!gb || !ui) {
+        LOG_ERROR("SYS", "OOM allocating GbMachine/UiState");
+        free(gb);
+        free(ui);
+        return APP_ERR_NOMEM;
+    }
+
+    gb_machine_init(gb);
+    bool want_jit = cfg.jit_enabled && !cfg.force_interp;
+    (void)jit_engine_init(&jit, want_jit);
+
+    ui_state_init(ui);
+    ui_state_scan_roms(ui);
+
     hal_sys_hide_splash();
 
     HalInputState inp;
     memset(&inp, 0, sizeof(inp));
-    bool hud_visible = true;
     uint32_t frame = 0;
+    uint32_t fps = 60;
+    uint32_t fps_frames = 0;
+    uint64_t fps_t0 = hal_sys_get_time_us();
 
     LOG_STEP("app:main_loop");
     while (max_frames == 0 || frame < max_frames) {
+        uint64_t frame_start = hal_sys_get_time_us();
+
         hal_input_poll(&inp);
         if (inp.quit_requested) {
             break;
         }
 
-        uint32_t pressed = inp.buttons & ~inp.prev_buttons;
-        bool l3r3_pressed = ((inp.buttons & (HAL_BTN_L3 | HAL_BTN_R3)) == (HAL_BTN_L3 | HAL_BTN_R3)) &&
-                            ((inp.prev_buttons & (HAL_BTN_L3 | HAL_BTN_R3)) != (HAL_BTN_L3 | HAL_BTN_R3));
-        if (l3r3_pressed || (pressed & HAL_BTN_HUD_KEY)) {
-            hud_visible = !hud_visible;
+        ui_state_update(ui, &cfg, gb, &jit, &inp);
+
+        /* Step Game Boy emulator when IN_GAME */
+        if (ui->zone == UI_ZONE_IN_GAME && gb->rom_loaded) {
+            int sub_frames = ui->fast_forward ? 4 : 1;
+            for (int sf = 0; sf < sub_frames; ++sf) {
+                gb->apu.out_pos = 0;
+                jit_engine_run_frame(&jit, gb);
+                if (sf == 0 && gb->apu.out_pos > 0) {
+                    hal_audio_push_samples(gb->apu.out_buf, gb->apu.out_pos);
+                }
+            }
         }
 
+        /* Render 1080p frame */
         int w = 0, h = 0, pitch = 0;
         uint32_t *fb = hal_video_get_backbuffer(&w, &h, &pitch);
         if (fb) {
-            ui_render_clear(fb, w, h, pitch, 0xFF0F172AU);
-            ui_render_text(fb, w, h, pitch, 64, 420, 4, 0xFF38BDF8U, "PS4 GAME BOY JIT + HLE");
+            ui_state_render(ui, &cfg, gb, &jit, fb, w, h, pitch);
 
-            char summary[128];
-            (void)snprintf(summary, sizeof(summary),
-                           "PHASE 1 HARNESS | SELFTEST: %u/6 PASS (%s) | JIT: %s",
-                           report.passed,
-                           selftest_ok ? "OK" : "FAIL",
-                           (report.jit_rwx_dualmap_ok && cfg.jit_enabled && !cfg.force_interp) ? "READY" : "INTERP FALLBACK");
-            ui_render_text(fb, w, h, pitch, 64, 480, 3, selftest_ok ? 0xFF86EFACU : 0xFFFCA5A5U, summary);
-
-            if (hud_visible) {
+            if (ui->hud_visible) {
                 UiHudMetrics m;
-                m.focus_zone = "BOOT_HARNESS";
-                m.active_modal = "NONE";
+                m.focus_zone = ui_state_zone_name(ui->zone);
+                m.active_modal = ui_state_modal_name(ui->zone);
                 m.last_buttons = inp.buttons;
-                m.jit_active = report.jit_rwx_dualmap_ok && cfg.jit_enabled && !cfg.force_interp;
-                m.jit_blocks = 0;
-                m.jit_cache_kb = 0;
-                m.fps = 60;
+                m.jit_active = jit.enabled;
+                m.jit_blocks = jit.blocks_compiled;
+                m.jit_cache_kb = (uint32_t)(jit.write_cursor / 1024U);
+                m.fps = fps;
                 m.audio_fill_pct = hal_audio_get_fill_percent();
                 ui_hud_render(fb, w, h, pitch, &m);
             }
@@ -146,10 +164,34 @@ AppResult app_run(uint32_t max_frames) {
         }
 
         frame++;
-        hal_sys_sleep_us(16000);
+        fps_frames++;
+        uint64_t now = hal_sys_get_time_us();
+        if (now - fps_t0 >= 1000000ULL) {
+            fps = fps_frames;
+            fps_frames = 0;
+            fps_t0 = now;
+        }
+
+        /* Frame pacing (~60 Hz) when not fast-forwarding and not in headless capped run */
+        if (!ui->fast_forward && max_frames == 0) {
+            uint64_t elapsed = now - frame_start;
+            if (elapsed < 16600ULL) {
+                hal_sys_sleep_us((uint32_t)(16600ULL - elapsed));
+            }
+        }
     }
 
     LOG_STEP("app:shutdown");
+    if (gb->rom_loaded && gb->cart.has_battery && gb->cart.ram_dirty &&
+        ui->active_sav_path[0] != '\0') {
+        (void)cart_save_sram(&gb->cart, ui->active_sav_path);
+    }
+
+    jit_engine_shutdown(&jit);
+    gb_machine_destroy(gb);
+    free(ui);
+    free(gb);
+
     char missing_path[APP_MAX_PATH];
     (void)snprintf(missing_path, sizeof(missing_path), "%s/missing_report.txt", hal_fs_get_data_dir());
     (void)dbg_stub_write_report(missing_path);
