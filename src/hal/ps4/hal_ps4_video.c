@@ -22,6 +22,7 @@ static int      g_back_idx = 0;
 static int64_t  g_flip_arg = 1;
 
 AppResult hal_video_init(void) {
+    LOG_INFO("VID", "step 1: sceVideoOutOpen");
     g_video_handle = sceVideoOutOpen(0xFF /* SYSTEM */, ORBIS_VIDEO_OUT_BUS_MAIN, 0, NULL);
     if (g_video_handle < 0) {
         LOG_RC_ERROR("VID", "sceVideoOutOpen failed", g_video_handle);
@@ -29,6 +30,8 @@ AppResult hal_video_init(void) {
     }
 
     size_t dmem_max = sceKernelGetDirectMemorySize();
+    LOG_INFO("VID", "step 2: alloc dmem handle=%d max=0x%zx req=0x%llx",
+             g_video_handle, dmem_max, (unsigned long long)PS4_DMEM_TOTAL);
     int32_t rc = sceKernelAllocateDirectMemory(0, (off_t)dmem_max, PS4_DMEM_TOTAL,
                                                HAL_DMEM_ALIGN, 3 /* WB_ONION */, &g_dmem_phys);
     if (rc < 0) {
@@ -36,6 +39,7 @@ AppResult hal_video_init(void) {
         return APP_ERR_VIDEO_INIT;
     }
 
+    LOG_INFO("VID", "step 3: map dmem phys=0x%llx prot=0x33", (unsigned long long)g_dmem_phys);
     /* prot = 0x33 (CPU R/W | GPU R/W) required by sceVideoOutRegisterBuffers */
     rc = sceKernelMapDirectMemory(&g_dmem_addr, PS4_DMEM_TOTAL, 0x33, 0, g_dmem_phys, HAL_DMEM_ALIGN);
     if (rc < 0 || !g_dmem_addr) {
@@ -43,6 +47,7 @@ AppResult hal_video_init(void) {
         return APP_ERR_VIDEO_INIT;
     }
 
+    LOG_INFO("VID", "step 4: clear dmem=%p and register buffers", g_dmem_addr);
     memset(g_dmem_addr, 0, PS4_DMEM_TOTAL);
     for (int i = 0; i < PS4_FB_COUNT; i++) {
         g_fb_ptrs[i] = (uint8_t *)g_dmem_addr + (size_t)i * PS4_FB_SIZE_ALIGN;

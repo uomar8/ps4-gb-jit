@@ -12,6 +12,13 @@
 
 #include <orbis/libkernel.h>
 
+/* FreeBSD/Orbis kernel open(2) flags — NEVER pass musl Linux O_CREAT/O_TRUNC/O_DIRECTORY to sceKernelOpen! */
+#define PS4_O_RDONLY    0x0000
+#define PS4_O_WRONLY    0x0001
+#define PS4_O_CREAT     0x0200
+#define PS4_O_TRUNC     0x0400
+#define PS4_O_DIRECTORY 0x20000
+
 const char *hal_fs_get_data_dir(void) {
     return "/data/gbjit";
 }
@@ -65,7 +72,7 @@ AppResult hal_fs_read_file(const char *abs_path, uint8_t **out_buf, size_t *out_
     if (!abs_path || !out_buf || !out_size) {
         return APP_ERR_INVALID_ARG;
     }
-    int32_t fd = sceKernelOpen(abs_path, O_RDONLY, 0);
+    int32_t fd = sceKernelOpen(abs_path, PS4_O_RDONLY, 0);
     if (fd < 0) {
         return ((uint32_t)fd == 0x80020002U) ? APP_ERR_NOT_FOUND : APP_ERR_IO;
     }
@@ -103,7 +110,7 @@ AppResult hal_fs_write_file(const char *abs_path, const uint8_t *buf, size_t siz
     if (!abs_path || (!buf && size > 0)) {
         return APP_ERR_INVALID_ARG;
     }
-    int32_t fd = sceKernelOpen(abs_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int32_t fd = sceKernelOpen(abs_path, PS4_O_WRONLY | PS4_O_CREAT | PS4_O_TRUNC, 0666);
     if (fd < 0) {
         LOG_RC_ERROR("FS", "sceKernelOpen(write) failed", fd);
         return APP_ERR_IO;
@@ -136,7 +143,7 @@ AppResult hal_fs_list_dir(const char *abs_dir, HalDirEntry *out_entries,
         return APP_ERR_INVALID_ARG;
     }
     *out_count = 0;
-    int32_t fd = sceKernelOpen(abs_dir, O_RDONLY | O_DIRECTORY, 0);
+    int32_t fd = sceKernelOpen(abs_dir, PS4_O_RDONLY | PS4_O_DIRECTORY, 0);
     if (fd < 0) {
         return ((uint32_t)fd == 0x80020002U) ? APP_ERR_NOT_FOUND : APP_ERR_IO;
     }

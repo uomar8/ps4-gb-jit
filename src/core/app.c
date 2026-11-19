@@ -74,14 +74,16 @@ AppResult app_run(uint32_t max_frames) {
     AppConfig cfg;
     app_load_config(&cfg);
     dbg_log_set_level((DbgLogLevel)cfg.log_level);
+    LOG_INFO("SYS", "config loaded jit=%d palette=%u", cfg.jit_enabled ? 1 : 0, (unsigned)cfg.palette_index);
 
+    /* Orbis init order: UserService + Pad first, then VideoOut, then AudioOut */
     LOG_STEP("app:init_subsystems");
+    AppResult irc = hal_input_init();
     AppResult vrc = hal_video_init();
     AppResult arc = hal_audio_init();
-    AppResult irc = hal_input_init();
+    if (irc != APP_OK) LOG_RC_ERROR("SYS", "hal_input_init failed", irc);
     if (vrc != APP_OK) LOG_RC_ERROR("SYS", "hal_video_init failed", vrc);
     if (arc != APP_OK) LOG_RC_ERROR("SYS", "hal_audio_init failed", arc);
-    if (irc != APP_OK) LOG_RC_ERROR("SYS", "hal_input_init failed", irc);
 
     DbgSelfTestReport report;
     bool selftest_ok = dbg_selftest_run(&report);
