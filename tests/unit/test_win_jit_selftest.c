@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,10 +9,17 @@
 #include "debug/dbg_stub.h"
 #include "hal/hal.h"
 
+#define CHECK(cond) do { \
+    if (!(cond)) { \
+        fprintf(stderr, "[FAIL] %s:%d: check failed: %s\n", __FILE__, __LINE__, #cond); \
+        return 1; \
+    } \
+} while (0)
+
 static uint8_t *build_win_lockstep_rom(size_t *out_size) {
     size_t sz = 32768;
     uint8_t *rom = (uint8_t *)calloc(1, sz);
-    assert(rom != NULL);
+    if (!rom) return NULL;
     memcpy(rom + 0x0134, "WINJITTEST", 10);
     rom[0x0147] = 0x00;
     rom[0x0148] = 0x00;
@@ -49,25 +55,27 @@ static uint8_t *build_win_lockstep_rom(size_t *out_size) {
 }
 
 int main(void) {
-    assert(hal_sys_init() == APP_OK);
-    assert(hal_fs_mkdir_p(hal_fs_get_data_dir()) == APP_OK);
+    CHECK(hal_sys_init() == APP_OK);
+    CHECK(hal_fs_mkdir_p(hal_fs_get_data_dir()) == APP_OK);
     dbg_log_init("./data/win_jit_test.log", DBG_LVL_WARN);
     dbg_stub_reset();
 
     size_t sz = 0;
     uint8_t *rom = build_win_lockstep_rom(&sz);
+    CHECK(rom != NULL);
 
     GbMachine *m_interp = (GbMachine *)calloc(1, sizeof(GbMachine));
     GbMachine *m_jit    = (GbMachine *)calloc(1, sizeof(GbMachine));
-    assert(m_interp != NULL && m_jit != NULL);
+    CHECK(m_interp != NULL && m_jit != NULL);
     gb_machine_init(m_interp);
     gb_machine_init(m_jit);
-    assert(gb_machine_load_rom_buffer(m_interp, rom, sz) == APP_OK);
-    assert(gb_machine_load_rom_buffer(m_jit, rom, sz) == APP_OK);
+    CHECK(gb_machine_load_rom_buffer(m_interp, rom, sz) == APP_OK);
+    CHECK(gb_machine_load_rom_buffer(m_jit, rom, sz) == APP_OK);
 
     JitEngine jit;
-    assert(jit_engine_init(&jit, true) == APP_OK);
-    assert(jit.available && jit.enabled);
+    memset(&jit, 0, sizeof(jit));
+    CHECK(jit_engine_init(&jit, true) == APP_OK);
+    CHECK(jit.available && jit.enabled);
 
     for (int f = 0; f < 4; ++f) {
         uint64_t target = m_jit->total_cycles + 70224ULL;
@@ -80,18 +88,19 @@ int main(void) {
                 m_interp->total_cycles += ic;
                 gb_machine_step_subsystems(m_interp, ic);
             }
-            assert(m_interp->cpu.a == m_jit->cpu.a);
-            assert(m_interp->cpu.f == m_jit->cpu.f);
-            assert(m_interp->cpu.pc == m_jit->cpu.pc);
-            assert(m_interp->cpu.sp == m_jit->cpu.sp);
-            assert(m_interp->total_cycles == m_jit->total_cycles);
-            assert(memcmp(m_interp->wram, m_jit->wram, sizeof(m_interp->wram)) == 0);
+            CHECK(m_interp->cpu.a == m_jit->cpu.a);
+            CHECK(m_interp->cpu.f == m_jit->cpu.f);
+            CHECK(m_interp->cpu.pc == m_jit->cpu.pc);
+            CHECK(m_interp->cpu.sp == m_jit->cpu.sp);
+            CHECK(m_interp->total_cycles == m_jit->total_cycles);
+            CHECK(memcmp(m_interp->wram, m_jit->wram, sizeof(m_interp->wram)) == 0);
         }
     }
 
-    assert(strcmp(m_jit->serial_buf, "OK") == 0);
-    assert(jit.blocks_compiled >= 3);
+    CHECK(strcmp(m_jit->serial_buf, "OK") == 0);
+    CHECK(jit.blocks_compiled >= 3);
 
+    uint32_t compiled = jit.blocks_compiled;
     jit_engine_shutdown(&jit);
     gb_machine_destroy(m_interp);
     gb_machine_destroy(m_jit);
@@ -102,6 +111,6 @@ int main(void) {
     hal_sys_shutdown();
 
     printf("[PASS] test_win_jit_selftest: Win64 CreateFileMapping dual RW/RX JIT + ABI lockstep passed (%u blocks)!\n",
-           jit.blocks_compiled);
+           compiled);
     return 0;
 }
